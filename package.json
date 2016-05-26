@@ -1,6 +1,6 @@
 {
   "name": "deps-patch",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Allow to add dependencies not detected from code",
   "main": "index.js",
   "scripts": {
