@@ -49,7 +49,7 @@ function createPatch(b, patchFn) {
     .then(function (files) {
       return Promise.all(files.map(function (file) {
         if (recorded[file]) {
-          return 
+          return
         }
         var row = pMap[file] || { file: file, id: file }
         row.entry = row.entry || false
@@ -93,7 +93,6 @@ function applyPatch(b, patch) {
     }, this)
     next()
   }
-  
   // we don't want to modify the contents of b._options.cache
   // which would be collected by watchify in the end of 'deps'
   b.pipeline.splice(
@@ -128,11 +127,11 @@ function removeEmpty(o) {
   }
 }
 
-function removeValues(o, values) {
+function removeValues(o, val) {
   var res = false
   Object.keys(o).forEach(function (k) {
     var v = o[k]
-    if (values[v]) {
+    if (val[v]) {
       res = true
       delete o[k]
     }
