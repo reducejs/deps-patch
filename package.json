@@ -1,0 +1,34 @@
+{
+  "name": "deps-patch",
+  "version": "0.0.1",
+  "description": "Allow to add dependencies not detected from code",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run lint && tap test/*.js",
+    "cov": "tap --cov test/*.js",
+    "lint": "eslint *.js 'lib/**/*.js' test/*.js bin/*.js",
+    "coveralls": "COVERALLS_REPO_TOKEN=REPO_TOKEN npm run cov"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reducejs/deps-patch.git"
+  },
+  "keywords": [
+    "browserify-plugin",
+    "reducejs",
+    "reduce-css"
+  ],
+  "author": "zoubin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/reducejs/deps-patch/issues"
+  },
+  "homepage": "https://github.com/reducejs/deps-patch#readme",
+  "devDependencies": {
+    "del": "^2.2.0",
+    "eslint": "^2.1.0",
+    "reduce-css": "^6.0.0",
+    "reduce-js": "^10.0.1",
+    "tap": "^5.0.0"
+  }
+}
