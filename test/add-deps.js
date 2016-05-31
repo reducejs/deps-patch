@@ -12,19 +12,22 @@ test('add deps', function (t) {
     { basedir: fixtures('src') },
     'bundle.css'
   )
-  b.plugin(depsPatch, function () {
-    this.push({ file: 'entry.css', deps: ['null.css'] })
-    this.push({ file: 'null.css', deps: ['extra.css'] })
-  })
+  b.plugin(depsPatch)
   del.sync(fixtures('build'))
-  b.bundle().pipe(b.dest(fixtures('build')))
-    .on('end', function () {
-      t.equal(
-        fs.readFileSync(fixtures('build', 'bundle.css'), 'utf8'),
-        fs.readFileSync(fixtures('expected', 'bundle.css'), 'utf8')
-      )
-      t.end()
-    })
+  b.bundle().pipe(b.dest(fixtures('build'))).on('end', function () {
+    t.equal(
+      fs.readFileSync(fixtures('build', 'bundle.css'), 'utf8'),
+      fs.readFileSync(fixtures('expected', 'bundle.css'), 'utf8')
+    )
+    t.end()
+  })
+  setTimeout(function () {
+    b.emit('deps-patch.update', [
+      // null.css is not @imported in the code
+      // but entry-deps.css does
+      { file: 'entry.css', deps: ['null.css', 'entry-deps.css'] },
+      { file: 'null.css', deps: ['extra.css'] },
+    ])
+  }, 200)
 })
-
 
