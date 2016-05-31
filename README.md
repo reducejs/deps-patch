@@ -21,10 +21,17 @@ var b = reduce.create(
   { basedir: path.join(__dirname, 'src') },
   'bundle.css'
 )
-b.plugin('deps-patch', function () {
-  this.push({ file: 'entry.css', deps: ['extra.css'] })
-})
+b.plugin('deps-patch')
 b.bundle().pipe(b.dest(path.join(__dirname, 'build')))
+
+// add dependencies
+setTimeout(function () {
+  b.emit('deps-patch.update', [
+    // it claims that entry.css should depend on extra.css
+    // even if entry.css does not do it in the code
+    { file: 'entry.css', deps: ['extra.css'] },
+  ])
+}, 200)
 
 ```
 
@@ -38,23 +45,17 @@ The result would be something like:
 
 ```
 
-## Options
-The `options` object passed to the plugin should be a function,
-which is called as a method of an array,
-and new dependencies could be added by pushing rows into it.
+## Usage
+The `deps-patch.update` event should be fired whenever you want to add new dependencies.
 
 ```js
-function () {
-  this.push(row)
-}
+b.plugin('deps-patch')
+
+b.emit('deps-patch.update', depsPatch)
 
 ```
 
-A promise may be returned for async operations.
-
-If the returned value resolves to an array,
-each element will be treated as a row.
-
+`depsPatch` is an array of rows.
 A `row` is just an object with fields:
 
 * `file`: `String`. the file path to the dependent

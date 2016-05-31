@@ -1,17 +1,41 @@
 var fs = require('fs')
 var path = require('path')
 var Transform = require('stream').Transform
+var depsDiff = require('./lib/deps-diff')
 
-module.exports = function (b, patchFn) {
+module.exports = function (b) {
+  var state = {}
+  state.cssDeps = new Promise(function (resolve) {
+    b.once('deps-patch.update', resolve)
+  })
+  state.shouldRebundleToApplyPatch = false
+  b.on('bundle', function () {
+    state.shouldRebundleToApplyPatch = false
+  })
+  b.on('deps-patch.update', function (deps) {
+    if (!Array.isArray(state.cssDeps)) {
+      state.cssDeps = deps
+      return
+    }
+    var diff = depsDiff(deps, state.cssDeps)
+    state.cssDeps = deps
+    if (diff && state.shouldRebundleToApplyPatch) {
+      b.emit('update')
+    }
+  })
+  state.getDepsPatch = function () {
+    state.shouldRebundleToApplyPatch = true
+    return state.cssDeps
+  }
+
   b.on('reset', function reset() {
-    applyPatch(b, createPatch(b, patchFn))
+    applyPatch(b, createPatch(b, state))
     return reset
   }())
 }
 
-function createPatch(b, patchFn) {
+function createPatch(b, state) {
   var patch = []
-  var res = []
   var pMap = {}
   var recorded = Object.create(null)
   var basedir = b._options.basedir || process.cwd()
@@ -24,22 +48,15 @@ function createPatch(b, patchFn) {
   function end(next) {
     var self = this
     Promise.resolve()
-    .then(function () {
-      return patchFn.call(patch)
-    })
+    .then(state.getDepsPatch)
     .then(function (rows) {
-      if (Array.isArray(rows)) {
-        patch = patch.concat(rows)
-      }
-    })
-    .then(function () {
       var filesDetected = []
-      patch.forEach(function (row) {
+      rows.forEach(function (row) {
         row.file = path.resolve(basedir, row.file)
         row.deps = (row.deps || []).map(function (file) {
           return path.resolve(basedir, file)
         })
-        res.push({ file: row.file, deps: row.deps })
+        patch.push({ file: row.file, deps: row.deps })
         pMap[row.file] = row
         filesDetected = filesDetected.concat(row.file, row.deps)
         delete row.deps
@@ -63,7 +80,7 @@ function createPatch(b, patchFn) {
     .then(function () { next() }, this.emit.bind(this, 'error'))
   }
   b.pipeline.get('record').push(through(write, end))
-  return res
+  return patch
 }
 
 function applyPatch(b, patch) {
@@ -109,12 +126,13 @@ function removeEmpty(o) {
     }
   })
   var removed = toDelete.reduce(function (t, file) {
-    var row = o.delete(file)
+    var row = o.get(file)
+    o.delete(file)
     t[row.id] = file
     return t
   }, Object.create(null))
 
-  if (Object.keys(removed).length) {
+  if (toDelete.length) {
     var recurse = false
     o.forEach(function (row) {
       if (removeValues(row.deps, removed)) {
